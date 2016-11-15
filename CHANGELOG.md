@@ -7,3 +7,4 @@ All major changes for the CS162 course will be logged in this file.
 - HW0 3.1 Makefile
 - HW0 3.2 Implemented word counter application
 - HW0 3.3 Fixed map application
+- Added '.gitignore' file
