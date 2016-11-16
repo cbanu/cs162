@@ -1,22 +1,17 @@
-all: main wc map
-
+EXECUTABLES=main wc map
+CC=gcc
 CFLAGS=-g -Wall
 LDFLAGS=-g
 
-wc.o: wc.c
-	gcc $(CFLAGS) -c wc.c
-wc: wc.o
-	gcc $(LDFLAGS) wc.o -o wc
+.SECONDEXPANSION:
 
-main.o: main.c
-	gcc $(CFLAGS) -c main.c
-main: main.o
-	gcc $(LDFLAGS) main.o -o main
+all: $(EXECUTABLES)
 
-map.o: map.c
-	gcc $(CFLAGS) -c map.c
-map: map.o
-	gcc $(LDFLAGS) map.o -o map
+$(EXECUTABLES): $$@.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f wc.o wc main.o main map.o map
+	rm -f $(EXECUTABLES) $(EXECUTABLES:=.o)
