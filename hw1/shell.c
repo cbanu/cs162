@@ -144,8 +144,38 @@ int main(unused int argc, unused char *argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-      /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      if (access(tokens_get_token(tokens, 0), X_OK) != -1) {
+        /* file exists and it's executable, prepare data for execv() function */
+        size_t narg = tokens_get_length(tokens);
+        char **args = malloc((narg + 1) * sizeof(char*));
+        if (NULL == args) {
+          fprintf(stderr, "error: %s\n", strerror(errno));
+          exit(1);
+        }
+        int i;
+        for (i = 0; i < narg; i++) {
+          args[i] = tokens_get_token(tokens, i);
+        }
+        args[narg] = NULL;
+        pid_t pid = fork();
+        if (pid == 0) {
+          /* child */
+          /* execute command */
+          if (-1 == execv(tokens_get_token(tokens, 0), args)) {
+            fprintf(stderr, "error: %s\n", strerror(errno));
+            exit(1);
+          }
+        } else {
+          /* parent */
+          /* wait for any process to end, it's only one */
+          int status;
+          wait(&status);
+        }
+      } else {
+        if (tokens_get_token(tokens, 0) != NULL) {
+          fprintf(stdout, "Unknown command '%s'.\n", tokens_get_token(tokens, 0));
+        }
+      }
     }
 
     if (shell_is_interactive)
