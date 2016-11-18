@@ -13,3 +13,7 @@ All major changes for the CS162 course will be logged in this file.
 ## 2016-11-16
 ### Changed
 - Made the Makefile for HW0 more generic/automated
+
+## 2016-11-18
+### Added
+- HW1 2 Implemented 'cd' and 'pwd' shell commands
