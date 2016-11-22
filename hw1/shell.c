@@ -124,6 +124,49 @@ void init_shell() {
   }
 }
 
+/* return the complete path to a corresponding executable file */
+/* note: the returned pointer must be deallocated */
+char *get_exe_file(const char *cmd) {
+  if (cmd == NULL) {
+    return NULL;
+  }
+  if (NULL != strchr(cmd, '/')) {
+    if (access(cmd, X_OK) != -1) {
+      return strdup(cmd);
+    } else {
+      return NULL;
+    }
+  } else {
+    char *path = getenv("PATH");
+    if (path == NULL) {
+      return NULL;
+    }
+    /* duplicate the string so that we don't change the process' environment */
+    path = strdup(path);
+    {
+      /* tokenize the PATH */
+      char *srchptr, *saveptr, *toknptr;
+      for (srchptr = path; NULL != (toknptr = strtok_r(srchptr, ":", &saveptr)); srchptr = NULL) {
+        /* compose a combined path string (make room for '/' and terminating NULL */
+        char *fullcmd = malloc(strlen(toknptr) + 1 + strlen(cmd) + 1);
+        sprintf(fullcmd, "%s/%s", toknptr, cmd);
+        /* check if such a file exists and is executable */
+        if (access(fullcmd, X_OK) != -1) {
+          /* free path duplicate, and return allocated executable path */
+          free(path);
+          return fullcmd;
+        } else {
+          /* don't forget to free this, not needed for next search */
+          free(fullcmd);
+        }
+      }
+    }
+    /* no suitable executable file found */
+    free(path);
+    return NULL;
+  }
+}
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -144,7 +187,9 @@ int main(unused int argc, unused char *argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
     } else {
-      if (access(tokens_get_token(tokens, 0), X_OK) != -1) {
+      char *cmd = tokens_get_token(tokens, 0);
+      char *exe = get_exe_file(cmd);
+      if (exe != NULL) {
         /* file exists and it's executable, prepare data for execv() function */
         size_t narg = tokens_get_length(tokens);
         char **args = malloc((narg + 1) * sizeof(char*));
@@ -161,7 +206,7 @@ int main(unused int argc, unused char *argv[]) {
         if (pid == 0) {
           /* child */
           /* execute command */
-          if (-1 == execv(tokens_get_token(tokens, 0), args)) {
+          if (-1 == execv(exe, args)) {
             fprintf(stderr, "error: %s\n", strerror(errno));
             exit(1);
           }
@@ -170,10 +215,13 @@ int main(unused int argc, unused char *argv[]) {
           /* wait for any process to end, it's only one */
           int status;
           wait(&status);
+          /* free dynamically allocated data in the parent process */
+          free(exe);
+          free(args);
         }
       } else {
-        if (tokens_get_token(tokens, 0) != NULL) {
-          fprintf(stdout, "Unknown command '%s'.\n", tokens_get_token(tokens, 0));
+        if (cmd != NULL) {
+          fprintf(stdout, "Unknown command '%s'.\n", cmd);
         }
       }
     }

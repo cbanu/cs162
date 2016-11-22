@@ -18,3 +18,7 @@ All major changes for the CS162 course will be logged in this file.
 ### Added
 - HW1 2 Implemented 'cd' and 'pwd' shell commands
 - HW1 3 Implemented program execution
+
+## 2016-11-22
+### Added
+- HW1 3 Implemented path resolution
